@@ -1,33 +1,37 @@
+import React from "react";
 import { Card } from "./ui/card";
-import { MapPin, AlertCircle, Clock, CheckCircle2 } from "lucide-react";
+import { AlertCircle, Clock, CheckCircle2 } from "lucide-react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 interface MapMarker {
   id: string;
-  x: number;
-  y: number;
+  lat: number;
+  lng: number;
   status: "open" | "in-progress" | "resolved";
   category: string;
   priority: "low" | "medium" | "high";
 }
 
 const mockMarkers: MapMarker[] = [
-  { id: "1", x: 25, y: 30, status: "open", category: "Pothole", priority: "high" },
-  { id: "2", x: 45, y: 20, status: "in-progress", category: "Street Light", priority: "medium" },
-  { id: "3", x: 65, y: 45, status: "resolved", category: "Graffiti", priority: "low" },
-  { id: "4", x: 30, y: 60, status: "open", category: "Traffic Signal", priority: "high" },
-  { id: "5", x: 70, y: 25, status: "in-progress", category: "Water Main", priority: "high" },
-  { id: "6", x: 55, y: 70, status: "open", category: "Sidewalk", priority: "medium" },
-  { id: "7", x: 80, y: 50, status: "resolved", category: "Noise Complaint", priority: "low" },
-  { id: "8", x: 15, y: 80, status: "open", category: "Pothole", priority: "medium" },
+  { id: "1", lat: 17.385, lng: 78.4867, status: "open", category: "Pothole", priority: "high" },
+  { id: "2", lat: 17.44, lng: 78.48, status: "in-progress", category: "Street Light", priority: "medium" },
+  { id: "3", lat: 17.42, lng: 78.52, status: "resolved", category: "Graffiti", priority: "low" },
+  { id: "4", lat: 17.36, lng: 78.50, status: "open", category: "Traffic Signal", priority: "high" },
+  { id: "5", lat: 17.39, lng: 78.54, status: "in-progress", category: "Water Main", priority: "high" },
+  { id: "6", lat: 17.33, lng: 78.45, status: "open", category: "Sidewalk", priority: "medium" },
+  { id: "7", lat: 17.41, lng: 78.47, status: "resolved", category: "Noise Complaint", priority: "low" },
+  { id: "8", lat: 17.37, lng: 78.49, status: "open", category: "Pothole", priority: "medium" },
 ];
-
-const getMarkerColor = (status: string, priority: string) => {
-  if (status === "resolved") return "text-green-600";
-  if (status === "in-progress") return "text-blue-600";
-  if (priority === "high") return "text-red-600";
-  if (priority === "medium") return "text-orange-600";
-  return "text-gray-600";
-};
 
 const getStatusIcon = (status: string) => {
   switch (status) {
@@ -45,6 +49,8 @@ interface CityMapViewProps {
 }
 
 export function CityMapView({ onMarkerClick }: CityMapViewProps) {
+  const center: [number, number] = [17.385, 78.4867];
+
   return (
     <Card className="p-6 h-[500px]">
       <div className="flex items-center justify-between mb-4">
@@ -64,50 +70,37 @@ export function CityMapView({ onMarkerClick }: CityMapViewProps) {
           </div>
         </div>
       </div>
-      
-      <div className="relative w-full h-full bg-gray-50 rounded-lg overflow-hidden">
-        {/* Simple city grid background */}
-        <div className="absolute inset-0 opacity-20">
-          <svg width="100%" height="100%" className="w-full h-full">
-            <defs>
-              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#cbd5e1" strokeWidth="1"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
-        
-        {/* Street representations */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-0 right-0 h-1 bg-gray-300"></div>
-          <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-300"></div>
-          <div className="absolute top-3/4 left-0 right-0 h-1 bg-gray-300"></div>
-          <div className="absolute left-1/4 top-0 bottom-0 w-1 bg-gray-300"></div>
-          <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gray-300"></div>
-          <div className="absolute left-3/4 top-0 bottom-0 w-1 bg-gray-300"></div>
-        </div>
-        
-        {/* Issue markers */}
-        {mockMarkers.map((marker) => {
-          const StatusIcon = getStatusIcon(marker.status);
-          return (
-            <button
-              key={marker.id}
-              className="absolute transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition-transform"
-              style={{
-                left: `${marker.x}%`,
-                top: `${marker.y}%`,
-              }}
-              onClick={() => onMarkerClick(marker.id)}
-            >
-              <div className="relative">
-                <MapPin className={`w-6 h-6 ${getMarkerColor(marker.status, marker.priority)}`} />
-                <StatusIcon className="w-3 h-3 absolute top-0.5 left-1/2 transform -translate-x-1/2 text-white" />
-              </div>
-            </button>
-          );
-        })}
+
+      <div className="relative w-full h-full rounded-lg overflow-hidden">
+        <MapContainer center={center} zoom={12} className="h-full w-full">
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {mockMarkers.map((marker) => {
+            const StatusIcon = getStatusIcon(marker.status);
+            return (
+              <Marker
+                key={marker.id}
+                position={[marker.lat, marker.lng]}
+                eventHandlers={{ click: () => onMarkerClick(marker.id) }}
+              >
+                <Popup>
+                  <div className="space-y-1">
+                    <div className="font-medium">{marker.category}</div>
+                    <div className="text-xs text-muted-foreground capitalize">
+                      {marker.status} • {marker.priority} priority
+                    </div>
+                    <div className="flex items-center gap-1 text-xs">
+                      <StatusIcon className="w-3 h-3" />
+                      <span>Click marker for details</span>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
+        </MapContainer>
       </div>
     </Card>
   );
